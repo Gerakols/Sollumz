@@ -48,6 +48,7 @@ from ..tools.utils import get_filename, get_max_vector_list, get_min_vector_list
 from ..shared.shader_nodes import SzShaderNodeParameter
 from ..tools.blenderhelper import get_child_of_constraint, get_pose_inverse, remove_number_suffix, get_evaluated_obj
 from ..sollumz_helper import get_export_transforms_to_apply, get_sollumz_materials
+from ..sollumz_hierarchy_validator import check_hierarchy_before_export, log_hierarchy_suggestions
 from ..sollumz_properties import (
     SOLLUMZ_UI_NAMES,
     BOUND_TYPES,
@@ -99,7 +100,12 @@ def create_drawable_xml(
 
     if not drawable_xml.shader_group.shaders:
         logger.warning(
-            f"{drawable_xml.name} has no Sollumz materials! Aborting...")
+            f"{drawable_xml.name} has no Sollumz materials! This usually indicates a hierarchy problem.")
+        
+        # Check for hierarchy issues and provide helpful suggestions
+        log_hierarchy_suggestions(drawable_obj)
+        
+        logger.warning("Aborting export...")
         return drawable_xml
 
     if armature_obj or drawable_obj.type == "ARMATURE":
@@ -294,6 +300,7 @@ def create_geometries_xml(
     if not mesh_eval.materials:
         logger.warning(
             f"Could not create geometries for Drawable Model '{mesh_eval.original.name}': Mesh has no Sollumz materials!")
+        logger.info(f"Make sure '{mesh_eval.original.name}' has materials with Sollumz shader type, or check if the object hierarchy is correct.")
         return []
 
     if is_cable:

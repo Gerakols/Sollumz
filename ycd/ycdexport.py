@@ -543,6 +543,21 @@ def clip_dictionary_from_object(obj: bpy.types.Object) -> Optional[ycdxml.ClipDi
             animations_obj = child_obj
         elif child_obj.sollum_type == SollumType.CLIPS:
             clips_obj = child_obj
+        elif child_obj.sollum_type == SollumType.CLIP:
+            logger.error(f"Clip Dictionary '{obj.name}' has a Clip object '{child_obj.name}' as a direct child!")
+            logger.info("Clips must be placed under a 'Clips' container object, not directly under the Clip Dictionary.")
+            return None
+
+    # Validate required hierarchy
+    if animations_obj is None:
+        logger.error(f"Clip Dictionary '{obj.name}' is missing an 'Animations' container object!")
+        logger.info("Create an empty object with Sollumz type 'Animations' as a child of the Clip Dictionary.")
+        return None
+    
+    if clips_obj is None:
+        logger.error(f"Clip Dictionary '{obj.name}' is missing a 'Clips' container object!")
+        logger.info("Create an empty object with Sollumz type 'Clips' as a child of the Clip Dictionary.")
+        return None
 
     any_animation_export_failed = False
     for animation_obj in animations_obj.children:

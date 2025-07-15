@@ -8,6 +8,7 @@ import re
 from bpy_extras.io_utils import ImportHelper
 from mathutils import Matrix, Quaternion
 from .sollumz_helper import SOLLUMZ_OT_base, find_sollumz_parent
+from .sollumz_hierarchy_validator import check_hierarchy_before_export
 from .sollumz_properties import SollumType, SOLLUMZ_UI_NAMES, BOUND_TYPES, TimeFlagsMixin, ArchetypeType, LODLevel
 from .sollumz_preferences import get_export_settings
 from .cwxml.drawable import YDR, YDD
@@ -223,6 +224,19 @@ class SOLLUMZ_OT_export_assets(bpy.types.Operator, TimedOperator):
             any_warnings_or_errors = False
             for obj in objs:
                 op_log.clear_log_counts()
+                
+                # Validate hierarchy before attempting export
+                is_valid_hierarchy, hierarchy_errors = check_hierarchy_before_export(obj)
+                if not is_valid_hierarchy:
+                    logger.error(f"Cannot export '{obj.name}' due to hierarchy errors:")
+                    for error_msg in hierarchy_errors[:5]:  # Limit to first 5 errors
+                        logger.error(f"  • {error_msg}")
+                    if len(hierarchy_errors) > 5:
+                        logger.error(f"  • ... and {len(hierarchy_errors) - 5} more hierarchy errors")
+                    logger.info("Fix the hierarchy issues and try exporting again.")
+                    any_warnings_or_errors = True
+                    continue
+                
                 filepath = None
                 try:
                     success = False
